@@ -3,30 +3,40 @@ from math import floor
 import schedule
 import time
 import tkinter as tk
+import keyboard
 
 CELL_SIZE = 50,50
 
 class Snake:
-    def __init__(self,root,location):
+    def __init__(self,root):
         self.headId = 1
         self.segments = {
             1:{
                 'direction':(0,1),
-                'x':location[0],
-                'y':location[1]
+                'x':4,
+                'y':0
             },
             2:{
+                'direction':(1,0),
+                'x':3,
+                'y':0
+            },
+            3:{
+                'direction':(1,0),
+                'x':2,
+                'y':0
+            },
+            4:{
                 'direction':(1,0),
                 'x':1,
                 'y':0
             },
-            3:{
+            5:{
                 'direction':(1,0),
                 'x':0,
                 'y':0
             },
         }
-        self.location = location
         self.root = root
 
     def getLocation(self,id=None):
@@ -56,7 +66,7 @@ def createWindow(cell_size):
 
 
     for i in range(15):
-        for j in range(15):
+        for j in range(20):
             e = tk.Frame(root, width=cell_size[0],height=cell_size[1])
             e['background'] = 'lightgray'
             e.grid(row=i,column=j)
@@ -91,8 +101,17 @@ def turnOffCell(root,seg):
     cell = getCellFromCords(root,(seg['x'],seg['y']))
     cell['background'] = 'lightgray'
 
-def checkCollision():
-    pass
+def checkCollision(snake:Snake,root:tk.Tk):
+    size = root.grid_size()
+    head = snake.segments.get(1)
+    if head.get('y') + head.get('direction')[1] < 0 or head.get('y') + head.get('direction')[1] >= size[0]:
+        raise Exception("Sorry, out of bounds")
+    if head.get('x') + head.get('direction')[0] < 0 or head.get('x') + head.get('direction')[0] >= size[1]:
+        raise Exception("Sorry, out of bounds")
+
+    for segment in snake.segments.values():
+        if head.get('y') + head.get('direction')[1] == segment.get('y') and head.get('x') + head.get('direction')[0] == segment.get('x'):
+            raise Exception("Sorry, no hitting yourself")
 
 def periodic(scheduler, interval, action, actionargs=()):
     scheduler.enter(interval,1, periodic,
@@ -100,22 +119,30 @@ def periodic(scheduler, interval, action, actionargs=()):
     action(*actionargs)
 
 def update_snake(snake,root):
+    checkCollision(snake,root)
     tail = snake.moveSnake()
     showSnake(root,snake)
     turnOffCell(root,tail)
     root.update()
+
+def changeDirection(x,y,snake:Snake):
+    snake.segments.get(1).update({'direction':(x,y)})
+
 
 if __name__=='__main__':
 
     root = createWindow(CELL_SIZE)
 
     showGridlines(root)
-    # getGridCenter(root)
-    snake = Snake(root,(2,0))
+    snake = Snake(root)
+    keyboard.add_hotkey('down', changeDirection,(1,0,snake))
+    keyboard.add_hotkey('up', changeDirection,(-1,0,snake))
+    keyboard.add_hotkey('left', changeDirection,(0,-1,snake))
+    keyboard.add_hotkey('right', changeDirection,(0,1,snake))
     showSnake(root,snake)
     root.update()
 
-    schedule.every(0.5).seconds.do(update_snake,snake,root)
+    schedule.every(0.25).seconds.do(update_snake,snake,root)
 
     while True:
         schedule.run_pending()
