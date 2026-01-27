@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from math import floor
+import random
 import schedule
 import time
 import tkinter as tk
@@ -12,26 +13,16 @@ class Snake:
         self.headId = 1
         self.segments = {
             1:{
-                'direction':(0,1),
-                'x':4,
-                'y':0
-            },
-            2:{
-                'direction':(1,0),
-                'x':3,
-                'y':0
-            },
-            3:{
                 'direction':(1,0),
                 'x':2,
                 'y':0
             },
-            4:{
+            2:{
                 'direction':(1,0),
                 'x':1,
                 'y':0
             },
-            5:{
+            3:{
                 'direction':(1,0),
                 'x':0,
                 'y':0
@@ -95,7 +86,7 @@ def getCellFromCords(root,cords):
 def showSnake(root,snake:Snake):
     for seg in snake.segments.values():
         cell = getCellFromCords(root,(seg['x'],seg['y']))
-        cell['background'] = 'red'
+        cell['background'] = 'green'
 
 def turnOffCell(root,seg):
     cell = getCellFromCords(root,(seg['x'],seg['y']))
@@ -118,7 +109,30 @@ def periodic(scheduler, interval, action, actionargs=()):
                     (scheduler, interval, action, actionargs))
     action(*actionargs)
 
-def update_snake(snake,root):
+def generateRandomCords(size):
+
+    x = random.randint(0, size[1]-1)
+    y = random.randint(0, size[0]-1)
+    return x,y 
+def spawnFood(snake:Snake,root:tk.Tk):
+    size = root.grid_size()
+
+    while True:
+        cords = generateRandomCords(size)
+
+        for seg in snake.segments.values():
+            if seg.get('x') == cords[0] and seg.get('y') == cords[1]:
+                continue
+        break
+    print(cords)
+    cell = getCellFromCords(root,cords)
+    cell['background'] = 'red'
+    return cords
+def updateSnake(snake,root):
+    global noFood
+    if noFood:
+        foodLoc = spawnFood(snake,root)
+        noFood = False
     checkCollision(snake,root)
     tail = snake.moveSnake()
     showSnake(root,snake)
@@ -141,11 +155,12 @@ if __name__=='__main__':
     keyboard.add_hotkey('right', changeDirection,(0,1,snake))
     showSnake(root,snake)
     root.update()
+    global noFood
+    noFood = True
+    schedule.every(0.15).seconds.do(updateSnake,snake,root)
 
-    schedule.every(0.25).seconds.do(update_snake,snake,root)
+    keyboard.read_event()
+
 
     while True:
         schedule.run_pending()
-
-    root.mainloop()
-
