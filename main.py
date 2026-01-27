@@ -5,16 +5,47 @@ import tkinter as tk
 CELL_SIZE = 50,50
 
 class Snake:
-    def __init__(self,root,id,location):
-        self.id = id
+    def __init__(self,root,location):
+        self.headId = 1
+        self.segments = {
+            1:{
+                'direction':(0,1),
+                'x':location[0],
+                'y':location[1]
+            },
+            2:{
+                'direction':(1,0),
+                'x':-1,
+                'y':0
+            },
+            3:{
+                'direction':(1,0),
+                'x':-2,
+                'y':0
+            },
+        }
         self.location = location
         self.root = root
 
-    def getLocation(self):
-        return self.location
+    def getLocation(self,id=None):
+        if id:
+            return (self.segments.get(self.id).get('x'),self.segments.get(1).get('y'))
+        else:
+            return (self.segments.get(self.headId).get('x'),self.segments.get(1).get('y'))
     
-    def setLocation(self,loc):
-        self.location = loc
+    def moveSnake(self):
+        for idx,item in self.segments.items():
+            print(item)
+            originalX = item.get('x')
+            originalY = item.get('y')
+            direction = item.get('direction')
+            self.segments.get(idx).update({'x':originalX + direction[0],'y':originalY + direction[1]})
+            try:
+                prevDirection = self.segments.get(idx-1).get('direction')
+            except:
+                prevDirection = self.segments.get(idx).get('direction')
+
+            self.segments.get(idx).update({'direction':prevDirection})
 
 def createWindow(cell_size):
     root = tk.Tk()
@@ -55,27 +86,6 @@ def showSegement(root,list_of_segments:list[Snake]):
         cell = getCellFromCords(root,seg.location)
         cell['background'] = 'red'
 
-def updateSegmentsLocation(direction,list_of_segments:list[Snake]):
-    updated_list_of_segments = []
-    for seg in list_of_segments:
-        if seg.id == 0:
-            current_location = seg.getLocation()
-            match direction:
-                case 'd':
-                    new_y = current_location[0] - 1
-                    new_x = current_location[1]
-                case 'u':
-                    new_y = current_location[0] + 1
-                    new_x = current_location[1]
-                case 'l':
-                    new_y = current_location[0] 
-                    new_x = current_location[1] -1
-                case 'r':
-                    new_y = current_location[0] 
-                    new_x = current_location[1] + 1
-            seg.setLocation((new_x,new_y))
-        updated_list_of_segments.append(seg)
-    return updated_list_of_segments
 def checkCollision():
     pass
 
@@ -89,18 +99,14 @@ if __name__=='__main__':
     showGridlines(root)
     # getGridCenter(root)
 
-    seg = Snake(root,0,(0,0))
-    x = [seg]
+    snake = Snake(root,(0,0))
+    print(snake.getLocation())
+    snake.moveSnake()
+    snake.moveSnake()
 
-    showSegement(root,x)
-    root.update()
+    print(snake.getLocation())
 
-    time.sleep(10)
+    # root.update()
 
-    x = updateSegmentsLocation('u',x)
-
-    showSegement(root,x)
-    root.update()
-
-    root.mainloop()
+    # root.mainloop()
 
