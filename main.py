@@ -1,4 +1,6 @@
+from collections import OrderedDict
 from math import floor
+import schedule
 import time
 import tkinter as tk
 
@@ -15,12 +17,12 @@ class Snake:
             },
             2:{
                 'direction':(1,0),
-                'x':-1,
+                'x':1,
                 'y':0
             },
             3:{
                 'direction':(1,0),
-                'x':-2,
+                'x':0,
                 'y':0
             },
         }
@@ -28,14 +30,11 @@ class Snake:
         self.root = root
 
     def getLocation(self,id=None):
-        if id:
-            return (self.segments.get(self.id).get('x'),self.segments.get(1).get('y'))
-        else:
-            return (self.segments.get(self.headId).get('x'),self.segments.get(1).get('y'))
+        return self.segments
     
     def moveSnake(self):
-        for idx,item in self.segments.items():
-            print(item)
+        tail =  self.segments.get(sorted(self.segments.keys())[-1]).copy()
+        for idx,item in OrderedDict(reversed(list(self.segments.items()))).items():
             originalX = item.get('x')
             originalY = item.get('y')
             direction = item.get('direction')
@@ -46,6 +45,7 @@ class Snake:
                 prevDirection = self.segments.get(idx).get('direction')
 
             self.segments.get(idx).update({'direction':prevDirection})
+        return tail
 
 def createWindow(cell_size):
     root = tk.Tk()
@@ -58,6 +58,7 @@ def createWindow(cell_size):
     for i in range(15):
         for j in range(15):
             e = tk.Frame(root, width=cell_size[0],height=cell_size[1])
+            e['background'] = 'lightgray'
             e.grid(row=i,column=j)
     root.grid_slaves()
     return root
@@ -81,16 +82,28 @@ def getCellFromCords(root,cords):
 
     return cell
 
-def showSegement(root,list_of_segments:list[Snake]):
-    for seg in list_of_segments:
-        cell = getCellFromCords(root,seg.location)
+def showSnake(root,snake:Snake):
+    for seg in snake.segments.values():
+        cell = getCellFromCords(root,(seg['x'],seg['y']))
         cell['background'] = 'red'
+
+def turnOffCell(root,seg):
+    cell = getCellFromCords(root,(seg['x'],seg['y']))
+    cell['background'] = 'lightgray'
 
 def checkCollision():
     pass
 
+def periodic(scheduler, interval, action, actionargs=()):
+    scheduler.enter(interval,1, periodic,
+                    (scheduler, interval, action, actionargs))
+    action(*actionargs)
 
-
+def update_snake(snake,root):
+    tail = snake.moveSnake()
+    showSnake(root,snake)
+    turnOffCell(root,tail)
+    root.update()
 
 if __name__=='__main__':
 
@@ -98,15 +111,14 @@ if __name__=='__main__':
 
     showGridlines(root)
     # getGridCenter(root)
+    snake = Snake(root,(2,0))
+    showSnake(root,snake)
+    root.update()
 
-    snake = Snake(root,(0,0))
-    print(snake.getLocation())
-    snake.moveSnake()
-    snake.moveSnake()
+    schedule.every(0.5).seconds.do(update_snake,snake,root)
 
-    print(snake.getLocation())
+    while True:
+        schedule.run_pending()
 
-    # root.update()
-
-    # root.mainloop()
+    root.mainloop()
 
