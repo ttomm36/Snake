@@ -47,6 +47,16 @@ class Snake:
 
             self.segments.get(idx).update({'direction':prevDirection})
         return tail
+    def add_segment(self):
+        segments_list = list(self.segments.items())
+        last_id = segments_list[-1][0]
+        last_x = segments_list[-1][1].get('x')
+        last_y = segments_list[-1][1].get('y')
+        last_direction = segments_list[-1][1].get('direction')
+        segments_list.append((last_id+1, {'direction': last_direction, 'x': last_x - last_direction[0], 'y': last_y - last_direction[1]}))
+        self.segments = dict(segments_list)
+        
+
 
 def createWindow(cell_size):
     root = tk.Tk()
@@ -84,9 +94,9 @@ def getCellFromCords(root,cords):
     return cell
 
 def showSnake(root,snake:Snake):
-    for seg in snake.segments.values():
-        cell = getCellFromCords(root,(seg['x'],seg['y']))
-        cell['background'] = 'green'
+    seg = snake.segments.get(1)
+    cell = getCellFromCords(root,(seg['x'],seg['y']))
+    cell['background'] = 'green'
 
 def turnOffCell(root,seg):
     cell = getCellFromCords(root,(seg['x'],seg['y']))
@@ -128,13 +138,22 @@ def spawnFood(snake:Snake,root:tk.Tk):
     cell = getCellFromCords(root,cords)
     cell['background'] = 'red'
     return cords
-def updateSnake(snake,root):
+def checkFood(snake:Snake,appleCords):
+    head = snake.segments.get(1)
+    if head['x'] == appleCords[0] and head['y'] == appleCords[1]:
+        return True
+    return False
+def updateSnake(snake:Snake,root):
     global noFood
+    global foodLoc
     if noFood:
         foodLoc = spawnFood(snake,root)
         noFood = False
     checkCollision(snake,root)
+    noFood = checkFood(snake,foodLoc)
     tail = snake.moveSnake()
+    if noFood:
+        snake.add_segment()
     showSnake(root,snake)
     turnOffCell(root,tail)
     root.update()
